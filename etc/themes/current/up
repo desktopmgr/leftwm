@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+export SCRIPTPATH="$(
+  cd "$(dirname "$0")"
+  pwd -P
+)"
+
+if [ -f "$SCRIPTPATH/theme.toml" ] && [ -p "$XDG_RUNTIME_DIR/leftwm/commands.pipe" ]; then
+  echo "LoadTheme $SCRIPTPATH/theme.toml" >"$XDG_RUNTIME_DIR/leftwm/commands.pipe"
+fi
+
+if [ -x "$(command -v ksuperkey)" ]; then
+  ksuperkey -e 'Super_L=Alt_L|F1' &>/dev/null &
+  ksuperkey -e 'Super_R=Alt_L|F1' &>/dev/null &
+fi
+
+# Start udiskie
+if [ -x "$(command -v dunst)" ]; then
+  udiskie &
+fi
+
+if [ -f "$HOME/.config/leftwm/autostart.sh" ]; then
+  "$HOME/.config/leftwm/autostart.sh"
+fi
+
+index=0
+monitor="$(polybar -m | grep +0+0 | sed s/:.*// | tac)"
+leftwm-state -q -n -t $SCRIPTPATH/sizes.liquid | sed -r '/^\s*$/d' | while read -r width x y; do
+  barname="mainbar$index"
+  monitor=$monitor offsetx=$x width=$width polybar -c $SCRIPTPATH/polybar.config $barname &>/dev/null &
+  let index=index+1
+done
